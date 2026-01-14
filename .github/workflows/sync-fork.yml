@@ -1,0 +1,68 @@
+name: Auto Sync Fork with Conflict PR Cleanup
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # daily at midnight UTC, adjust if needed
+  workflow_dispatch:     # allows manual triggering
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v3
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Git
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+      - name: Add upstream remote
+        run: git remote add upstream https://github.com/Purfview/IMDb-Scout-Mod.git
+
+      - name: Fetch upstream
+        run: git fetch upstream
+
+      - name: Cleanup old conflict branch
+        run: |
+          # Delete old conflict branch if it exists to keep the fork clean
+          if git ls-remote --exit-code origin sync-conflict-branch; then
+            git push origin --delete sync-conflict-branch
+          fi
+
+      - name: Try rebase
+        id: rebase
+        run: |
+          git checkout main
+          # Try rebase with autostash to keep our commits on top
+          if git rebase upstream/main --autostash; then
+            echo "success=true" >> $GITHUB_OUTPUT
+          else
+            echo "success=false" >> $GITHUB_OUTPUT
+            echo "Creating conflict PR..."
+            # create a temporary branch to hold conflicts
+            git checkout -b sync-conflict-branch
+            git push origin sync-conflict-branch --force
+          fi
+
+      - name: Push changes if rebase succeeded
+        if: steps.rebase.outputs.success == 'true'
+        run: git push origin main --force
+
+      - name: Create PR if conflicts
+        if: steps.rebase.outputs.success == 'false'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Sync fork with upstream (conflict)"
+          branch: sync-conflict-branch
+          base: main
+          title: "⚠️ Sync Fork - Conflicts Detected"
+          body: |
+            ⚠️ This pull request was automatically created because conflicts occurred while syncing your fork with the upstream repository.
+
+            Please review the changes and resolve conflicts directly on GitHub before merging.
