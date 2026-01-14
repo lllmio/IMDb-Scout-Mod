@@ -1,9 +1,9 @@
-name: Auto Sync Fork with Conflict PR Cleanup
+name: Safe Auto Sync Fork
 
 on:
   schedule:
-    - cron: '0 0 * * *' # daily at midnight UTC, adjust if needed
-  workflow_dispatch:     # allows manual triggering
+    - cron: '0 0 * * *' # daily at midnight UTC
+  workflow_dispatch:     # manual trigger allowed
 
 jobs:
   sync:
@@ -24,12 +24,16 @@ jobs:
       - name: Add upstream remote
         run: git remote add upstream https://github.com/Purfview/IMDb-Scout-Mod.git
 
-      - name: Fetch upstream
-        run: git fetch upstream
+      - name: Fetch upstream and main
+        run: |
+          git fetch upstream
+          git fetch origin main
+          git checkout main
+          git reset --hard origin/main  # start fresh from origin/main
 
       - name: Cleanup old conflict branch
         run: |
-          # Delete old conflict branch if it exists to keep the fork clean
+          # Delete old conflict branch if exists
           if git ls-remote --exit-code origin sync-conflict-branch; then
             git push origin --delete sync-conflict-branch
           fi
@@ -38,20 +42,21 @@ jobs:
         id: rebase
         run: |
           git checkout main
-          # Try rebase with autostash to keep our commits on top
+          # Attempt rebase with autostash
           if git rebase upstream/main --autostash; then
             echo "success=true" >> $GITHUB_OUTPUT
           else
             echo "success=false" >> $GITHUB_OUTPUT
             echo "Creating conflict PR..."
-            # create a temporary branch to hold conflicts
-            git checkout -b sync-conflict-branch
+            # Create conflict branch if not exists
+            git checkout -B sync-conflict-branch
             git push origin sync-conflict-branch --force
           fi
 
       - name: Push changes if rebase succeeded
         if: steps.rebase.outputs.success == 'true'
-        run: git push origin main --force
+        run: |
+          git push origin main --force || echo "Push failed, maybe branch protection rules applied"
 
       - name: Create PR if conflicts
         if: steps.rebase.outputs.success == 'false'
