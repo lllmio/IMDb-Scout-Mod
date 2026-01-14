@@ -12778,7 +12778,7 @@ if (navigator.userAgent.toLowerCase().indexOf('chrome') > -1 || navigator.userAg
     const warn_ver   = await GM.getValue("Scout_warning_ver", "none");
     if (warn_count < 3 && warn_ver !== GM.info.script.version) {
       console.log("IMDb Scout Mod (Warning): Bug detected: Chrome/Chromium! The script works slower and may soon stop working at all. Install Firefox to fix!");
-      GM.notification("Bug detected: Chrome/Chromium! \nThe script works slower and may soon \nstop working at all. \nInstall Firefox to fix!", "IMDb Scout Mod (Warning)");
+      //GM.notification("Bug detected: Chrome/Chromium! \nThe script works slower and may soon \nstop working at all. \nInstall Firefox to fix!", "IMDb Scout Mod (Warning)");
       GM.setValue("Scout_warning_count", warn_count +1);
     } else if (warn_ver !== GM.info.script.version) {
         GM.setValue("Scout_warning_ver", GM.info.script.version);
@@ -12857,4 +12857,5 @@ if (onReferencePage) {
 
 scoutWarning();
 scoutWarning2();
+
 
