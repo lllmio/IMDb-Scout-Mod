@@ -12733,7 +12733,7 @@ if (/com\/[^/]*\/title\/tt/.test(window.location.href)) {
     const warn_ver   = await GM.getValue("Scout_warning2_ver", "none");
     if (warn_count < 3 && warn_ver !== GM.info.script.version) {
       console.log("IMDb Scout Mod (Warning): Non-English IMDb detected! The script doesn't work properly here. Set language to English!");
-      GM.notification("Non-English IMDb detected! \nThe script doesn't work \nproperly here. \nSet language to English!", "IMDb Scout Mod (Warning)");
+      //GM.notification("Non-English IMDb detected! \nThe script doesn't work \nproperly here. \nSet language to English!", "IMDb Scout Mod (Warning)");
       GM.setValue("Scout_warning2_count", warn_count +1);
     } else if (warn_ver !== GM.info.script.version) {
         GM.setValue("Scout_warning2_ver", GM.info.script.version);
@@ -12793,5 +12793,6 @@ if (onReferencePage) {
 
 scoutWarning();
 scoutWarning2();
+
 
 
